@@ -14,13 +14,16 @@
 
 // LED on board
 const int pinLed = LED_BUILTIN;
+
 // Arm Potentiometer Input
 const int pinArm = A0;
-// Arm Move Enable/PWM
+
+// Arm Move Enable/PWM (L293D)
 const int pinArmEn = 6;
 const int pinArm1A = 5;
 const int pinArm2A = 4;
-// Arm pos0 Input
+
+// Arm pos0 Input (Hall/Button)
 const int pinArmPos0 = 9;
 
 // Button up Input
@@ -31,18 +34,53 @@ const int pinArmDown = 11;
 
 // Initialize vars
 Led led(pinLed);
+Button buttonUp(pinArmUp, Button::PULLDOWN);
+Button buttonDown(pinArmDown, Button::PULLDOWN);
+Button buttonPos0(pinArmPos0, Button::PULLDOWN);
 int armMotorSpeed=0;
+int armMove=0;
 
 
+void keyUp(Button &button)
+{
+	// Arm up key pressed
+	armMove++;
+	
 
+}
+
+
+void keyDown(Button &button)
+{
+	// Arm down key pressed
+	armMove--;
+}
+
+
+void keyPos0(Button &button)
+{
+	// Pos0 reached
+	// Stop motor and record potentiometer value
+	if(armMove < 0 ) armMove=0;
+}
 
 
 //The setup function is called once at startup of the sketch
 void setup()
 {
-	// Add your initialization code here
+	// Initialize LED
 	led.setup();
+	led.setBlinker(200, 200);
 	
+	// Initialize Buttons
+	buttonUp.setup();
+	buttonUp.onKeyPressed(keyUp);
+	buttonDown.setup();
+	buttonDown.onKeyPressed(keyDown);
+	
+	// Initialize Arm Pos0 Pin
+	buttonPos0.setup();
+	buttonDown.onKeyDown(keyPos0);
 	
 	// Initialize Serial
 	Serial.begin(9600);
@@ -56,28 +94,22 @@ void setup()
 	digitalWrite(pinArm1A, LOW);
 	digitalWrite(pinArm2A, LOW);
 	
-	// Initialize Arm Pos0 Pin
-	pinMode(pinArmPos0, INPUT);
-	
-	// Initialize Button Pins
-	pinMode(pinArmUp, INPUT);
-	pinMode(pinArmDown, INPUT);
 }
+
+
 
 // The loop function is called in an endless loop
 void loop()
 {
 	//Add your repeated code here
 	led.update();
-	led.setBlinker(200, 200);
+	buttonUp.update();
+	buttonDown.update();
+	buttonPos0.update();
 	
 	int armPotValue=analogRead(pinArm);
 	Serial.print("armPotValue=");
 	Serial.print(armPotValue);
-	
-	int armMove=0;
-	if(digitalRead(pinArmUp)) armMove++;
-	if(digitalRead(pinArmDown)) armMove--;
 	
 	Serial.print(" | pinArmPos0=");
 	Serial.print(digitalRead(pinArmPos0));
@@ -88,7 +120,6 @@ void loop()
 	// Check limits
 	if( (armPotValue > 460) && (armMove > 0) ) armMove=0;
 	if( (armPotValue < 1) && (armMove < 0) ) armMove=0;
-	if( !digitalRead(pinArmPos0) && (armMove < 0) ) armMove=0;
 	
 	if(armMove == 0)
 	{
