@@ -1,0 +1,6 @@
+[submodule "libraries/Led"]
+	path = libraries/Led
+	url = https://github.com/rrusch/Led.git
+[submodule "libraries/Button"]
+	path = libraries/Button
+	url = https://github.com/rrusch/Button.git
